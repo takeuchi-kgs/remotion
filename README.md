@@ -25,6 +25,12 @@ VOICEVOX_BASE_URL=http://127.0.0.1:50021
 
 ## 起動方法
 
+まずプロジェクトディレクトリに移動します:
+
+```bash
+cd /path/to/remotion
+```
+
 ### GUI（Remotion Converter）
 
 ブラウザベースのGUIで、テキスト変換・編集・パイプライン実行・設定変更をまとめて行えます。
@@ -51,9 +57,11 @@ http://localhost:3000 をブラウザで開きます。
 
 ```bash
 # ターミナル1: GUI
+cd /path/to/remotion
 npm run gui
 
 # ターミナル2: Remotion Studio
+cd /path/to/remotion
 npm run dev
 ```
 
