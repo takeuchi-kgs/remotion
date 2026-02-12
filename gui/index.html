@@ -1218,8 +1218,8 @@
           document.getElementById('script-title').textContent = script.title || 'スクリプト編集';
           renderScenes(script);
           notify(file.name + ' を読み込みました（' + script.scenes.length + 'シーン）', 'success');
-          // Switch to edit tab
-          switchTab('edit');
+          // Switch to edit tab (skip loadScript to keep imported data)
+          switchTab('edit', true);
         } catch (err) {
           notify('JSONの解析に失敗: ' + err.message, 'error');
         }
@@ -1231,13 +1231,13 @@
     /* ==========================================================================
        TAB SWITCHING
        ========================================================================== */
-    function switchTab(tabName) {
+    function switchTab(tabName, skipLoad) {
       document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
       document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
       document.getElementById('tab-' + tabName).classList.add('active');
       document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
 
-      if (tabName === 'edit') loadScript();
+      if (tabName === 'edit' && !skipLoad) loadScript();
       if (tabName === 'pipeline') loadPipelineStatus();
     }
 

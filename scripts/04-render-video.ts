@@ -70,6 +70,28 @@ async function main() {
     }
   }
 
+  // Copy config files to public/data/ so Remotion bundle can access them via staticFile()
+  const publicDataDir = path.resolve("public/data");
+  if (!fs.existsSync(publicDataDir)) {
+    fs.mkdirSync(publicDataDir, { recursive: true });
+  }
+  // Sync script.json
+  if (fs.existsSync(scriptPath)) {
+    fs.copyFileSync(scriptPath, path.join(publicDataDir, "script.json"));
+  }
+  // Sync avatar-config.json
+  if (fs.existsSync(avatarConfigPath)) {
+    fs.copyFileSync(avatarConfigPath, path.join(publicDataDir, "avatar-config.json"));
+  }
+  // Sync timing-config.json
+  if (fs.existsSync(timingConfigPath)) {
+    fs.copyFileSync(timingConfigPath, path.join(publicDataDir, "timing-config.json"));
+  }
+  // Sync manifest.json
+  if (fs.existsSync(manifestPath)) {
+    fs.copyFileSync(manifestPath, path.join(publicDataDir, "manifest.json"));
+  }
+
   const entryPoint = path.resolve("src/index.ts");
   console.log("Bundling...");
   const bundleLocation = await bundle({

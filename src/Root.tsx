@@ -760,7 +760,7 @@ export const RemotionRoot: React.FC = () => {
           audioManifest: mockAudioManifest,
           showSubtitles: false,
         }}
-        calculateMetadata={async () => {
+        calculateMetadata={async ({ props: inputProps }) => {
           try {
             const scriptRes = await fetch(staticFile("data/script.json"));
             if (!scriptRes.ok) throw new Error("script.json not found");
@@ -812,10 +812,10 @@ export const RemotionRoot: React.FC = () => {
                 script: realScript,
                 audioManifest: realManifest,
                 showSubtitles: false,
-                lineGapFrames: timingConfig.lineGapFrames,
-                sceneBufferFrames: timingConfig.sceneBufferFrames,
-                avatarLeft: avatarConfig.left,
-                avatarRight: avatarConfig.right,
+                lineGapFrames: inputProps.lineGapFrames ?? timingConfig.lineGapFrames,
+                sceneBufferFrames: inputProps.sceneBufferFrames ?? timingConfig.sceneBufferFrames,
+                avatarLeft: inputProps.avatarLeft ?? avatarConfig.left,
+                avatarRight: inputProps.avatarRight ?? avatarConfig.right,
               },
             };
           } catch {

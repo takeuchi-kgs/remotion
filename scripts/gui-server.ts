@@ -268,10 +268,18 @@ function syncToPublic(
     const publicData = path.join(PROJECT_ROOT, "public", "data");
     if (!fs.existsSync(publicData)) fs.mkdirSync(publicData, { recursive: true });
 
-    // Always sync script.json if it exists
+    // Always sync script.json and config files if they exist
     const scriptSrc = path.join(PROJECT_ROOT, "data", "input", "script.json");
     if (fs.existsSync(scriptSrc)) {
       fs.copyFileSync(scriptSrc, path.join(publicData, "script.json"));
+    }
+    const avatarConfigSrc = path.join(PROJECT_ROOT, "data", "input", "avatar-config.json");
+    if (fs.existsSync(avatarConfigSrc)) {
+      fs.copyFileSync(avatarConfigSrc, path.join(publicData, "avatar-config.json"));
+    }
+    const timingConfigSrc = path.join(PROJECT_ROOT, "data", "input", "timing-config.json");
+    if (fs.existsSync(timingConfigSrc)) {
+      fs.copyFileSync(timingConfigSrc, path.join(publicData, "timing-config.json"));
     }
 
     // After step 3 (audio): sync manifest + audio files
