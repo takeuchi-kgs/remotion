@@ -1,0 +1,69 @@
+{
+  "title": "AIで解説動画を作る方法",
+  "description": "メモから動画まで全自動パイプラインの紹介",
+  "scenes": [
+    {
+      "title": "イントロ",
+      "slide": {
+        "type": "title",
+        "title": "AIで解説動画を作る方法",
+        "subtitle": "メモから動画まで全自動"
+      },
+      "lines": [
+        {
+          "speaker": "left",
+          "text": "今日はAIで解説動画を作る方法を紹介します。"
+        },
+        {
+          "speaker": "right",
+          "text": "楽しみですね！どんな仕組みなんですか？"
+        }
+      ]
+    },
+    {
+      "title": "全体フロー",
+      "slide": {
+        "type": "steps",
+        "title": "動画生成の流れ",
+        "items": [
+          "メモを書く",
+          "台本を生成",
+          "画像・音声を生成",
+          "動画をレンダリング"
+        ]
+      },
+      "lines": [
+        {
+          "speaker": "left",
+          "text": "まずメモを書くだけで、あとは自動で動画になります。"
+        },
+        {
+          "speaker": "right",
+          "text": "4つのステップがあるんですね。"
+        }
+      ]
+    },
+    {
+      "title": "まとめ",
+      "slide": {
+        "type": "summary",
+        "title": "今日のまとめ",
+        "items": [
+          "メモを書くだけでOK",
+          "AIが台本・画像・音声を生成",
+          "Remotionで動画に合成"
+        ]
+      },
+      "lines": [
+        {
+          "speaker": "left",
+          "text": "以上が全体の流れでした。"
+        },
+        {
+          "speaker": "right",
+          "text": "とても便利ですね！ありがとうございました。"
+        }
+      ]
+    }
+  ]
+}

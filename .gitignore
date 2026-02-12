@@ -1,0 +1,9 @@
+node_modules/
+.env
+data/output/
+data/input/
+dist/
+out/
+public/audio/
+public/data/
+.DS_Store

@@ -1,0 +1,42 @@
+{
+  "name": "remotion-explainer",
+  "version": "1.0.0",
+  "description": "AI-powered explainer video generation pipeline",
+  "type": "module",
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "render": "remotion render",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "convert-md": "tsx scripts/00-convert-md.ts",
+    "gui": "tsx scripts/gui-server.ts",
+    "pipeline": "tsx scripts/pipeline.ts",
+    "extract-slides": "tsx scripts/01-extract-slides.ts",
+    "generate-images": "tsx scripts/02-generate-images.ts",
+    "generate-audio": "tsx scripts/03-generate-audio.ts",
+    "render-video": "tsx scripts/04-render-video.ts",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@google/genai": "^1.40.0",
+    "@remotion/bundler": "4.0.421",
+    "@remotion/cli": "4.0.421",
+    "@remotion/renderer": "4.0.421",
+    "dotenv": "^17.2.4",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "4.0.421",
+    "zod": "^3.22.3"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.421",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
+  }
+}

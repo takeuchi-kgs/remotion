@@ -1,0 +1,2120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remotion Converter GUI</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --surface: #16213e;
+      --surface-2: #0f3460;
+      --accent: #e94560;
+      --accent-2: #533483;
+      --text: #eee;
+      --text-dim: #888;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --border: #333;
+      --radius: 8px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* --- Layout --- */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .app-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .app-header h1 span {
+      color: var(--accent);
+    }
+
+    .tab-bar {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: var(--surface);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    .tab-btn.active {
+      background: var(--surface-2);
+      color: var(--text);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* --- Inputs --- */
+    input, textarea, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      width: 100%;
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    /* --- Buttons --- */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      font-family: inherit;
+      transition: opacity 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* --- Convert Tab --- */
+    .md-input-wrapper {
+      position: relative;
+    }
+
+    #md-input {
+      min-height: 280px;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    #md-input.dragover {
+      border-color: var(--accent);
+      background: rgba(233, 69, 96, 0.05);
+    }
+
+    .drag-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(233, 69, 96, 0.1);
+      border: 2px dashed var(--accent);
+      border-radius: var(--radius);
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      color: var(--accent);
+      font-weight: 600;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #md-input.dragover + .drag-overlay {
+      display: flex;
+    }
+
+    .file-upload-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .file-upload-row input[type="file"] {
+      display: none;
+    }
+
+    .convert-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    /* --- Progress --- */
+    .progress-section {
+      display: none;
+      margin-top: 24px;
+      padding: 20px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .progress-section.visible {
+      display: block;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-status {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .progress-step {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* --- Edit Tab --- */
+    .edit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .edit-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .scene-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .scene-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .scene-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--accent-2);
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .scene-card-header .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .scene-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .scene-fields .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .slide-data-fields {
+      margin-bottom: 16px;
+    }
+
+    .slide-data-fields .form-group {
+      margin-bottom: 12px;
+    }
+
+    .diagram-section {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .diagram-section h4 {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .dialogue-section {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .dialogue-section h4 {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .dialogue-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .speaker-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .speaker-dot:hover {
+      transform: scale(1.3);
+    }
+
+    .speaker-dot.left {
+      background: #4a9eff;
+    }
+
+    .speaker-dot.right {
+      background: #ff9800;
+    }
+
+    .dialogue-line input {
+      flex: 1;
+    }
+
+    .dialogue-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .scene-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .voice-settings-section,
+    .timing-settings-section,
+    .avatar-settings-section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .voice-settings-section h4,
+    .timing-settings-section h4,
+    .avatar-settings-section h4 {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .avatar-settings-grid {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .avatar-settings-grid .form-group {
+      margin-bottom: 0;
+      min-width: 180px;
+      flex: 1;
+    }
+
+    .avatar-settings-grid select {
+      width: 100%;
+    }
+
+    .avatar-preview {
+      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px;
+      min-height: 90px;
+    }
+
+    .avatar-preview img {
+      width: 60px;
+      height: 80px;
+      object-fit: contain;
+    }
+
+    .timing-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .timing-slider-row label {
+      min-width: 120px;
+      font-size: 13px;
+    }
+
+    .timing-slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+    }
+
+    .timing-slider-row .timing-value {
+      min-width: 70px;
+      text-align: right;
+      font-size: 13px;
+      font-family: monospace;
+      color: var(--accent);
+    }
+
+    .voice-settings-grid {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .voice-settings-grid .form-group {
+      margin-bottom: 0;
+      min-width: 200px;
+      flex: 1;
+    }
+
+    .voice-settings-grid select {
+      width: 100%;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    .empty-state p {
+      margin-bottom: 16px;
+    }
+
+    /* --- Pipeline Tab --- */
+    .pipeline-info {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .pipeline-steps {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .pipeline-step-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color 0.2s;
+    }
+
+    .pipeline-step-card.running {
+      border-color: var(--warning);
+    }
+
+    .pipeline-step-card.complete {
+      border-color: var(--success);
+    }
+
+    .pipeline-step-card.error {
+      border-color: var(--accent);
+    }
+
+    .step-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--surface-2);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .step-icon.waiting { color: var(--text-dim); }
+    .step-icon.running { color: var(--warning); animation: pulse 1.2s infinite; }
+    .step-icon.complete { color: var(--success); }
+    .step-icon.error { color: var(--accent); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .step-info {
+      flex: 1;
+    }
+
+    .step-info .step-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .step-info .step-status-text {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .pipeline-run-all {
+      margin-bottom: 20px;
+    }
+
+    .log-panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: var(--text-dim);
+    }
+
+    .log-panel .log-info { color: var(--text); }
+    .log-panel .log-success { color: var(--success); }
+    .log-panel .log-error { color: var(--accent); }
+    .log-panel .log-warn { color: var(--warning); }
+
+    /* --- Notification --- */
+    .notification {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 1000;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: var(--success);
+      color: white;
+    }
+
+    .notification.error {
+      background: var(--accent);
+      color: white;
+    }
+
+    .notification.info {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* --- Settings Panel --- */
+    .settings-toggle {
+      margin-left: auto;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .settings-toggle:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    .settings-panel {
+      display: none;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+    }
+
+    .settings-panel.open {
+      display: block;
+    }
+
+    .settings-grid {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .settings-grid .form-group {
+      margin-bottom: 0;
+      min-width: 160px;
+    }
+
+    .settings-grid select,
+    .settings-grid input {
+      width: 100%;
+    }
+
+    .provider-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .provider-badge.gemini {
+      background: #1a73e8;
+      color: white;
+    }
+
+    .provider-badge.ollama {
+      background: #2e7d32;
+      color: white;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 640px) {
+      .tab-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+
+      .tab-content {
+        padding: 16px;
+      }
+
+      .scene-fields {
+        grid-template-columns: 1fr;
+      }
+
+      .edit-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <h1><span>Remotion</span> Converter <span id="provider-badge" class="provider-badge gemini">Gemini</span></h1>
+    <button class="settings-toggle" onclick="toggleSettings()">&#x8A2D;&#x5B9A;</button>
+  </header>
+
+  <div id="settings-panel" class="settings-panel">
+    <div class="settings-grid">
+      <div class="form-group">
+        <label for="llm-provider">&#x30D7;&#x30ED;&#x30D0;&#x30A4;&#x30C0;&#x30FC;</label>
+        <select id="llm-provider" onchange="onProviderChange()">
+          <option value="gemini">Gemini (API)</option>
+          <option value="ollama">Ollama (&#x30ED;&#x30FC;&#x30AB;&#x30EB;)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="llm-model">&#x30E2;&#x30C7;&#x30EB;</label>
+        <input type="text" id="llm-model" placeholder="デフォルト: gemini-2.5-flash / qwen2.5">
+      </div>
+      <div class="form-group" id="ollama-url-group" style="display:none;">
+        <label for="ollama-url">Ollama URL</label>
+        <input type="text" id="ollama-url" placeholder="http://localhost:11434">
+      </div>
+      <div class="form-group">
+        <button class="btn btn-primary btn-sm" onclick="saveLLMConfig()">LLM&#x4FDD;&#x5B58;</button>
+      </div>
+    </div>
+    <div class="voice-settings-section">
+      <h4>&#x97F3;&#x58F0;&#x8A2D;&#x5B9A;&#xFF08;VOICEVOX&#xFF09;</h4>
+      <div class="voice-settings-grid">
+        <div class="form-group">
+          <label for="speaker-left">&#x5DE6;&#x5074;&#xFF08;&#x8A71;&#x8005;A&#xFF09;</label>
+          <select id="speaker-left"><option value="21">読み込み中...</option></select>
+        </div>
+        <div class="form-group">
+          <label for="speaker-right">右側（話者B）</label>
+          <select id="speaker-right"><option value="109">読み込み中...</option></select>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-primary btn-sm" onclick="saveSpeakerConfig()">&#x97F3;&#x58F0;&#x4FDD;&#x5B58;</button>
+        </div>
+      </div>
+      <div id="speaker-status" style="font-size:12px;color:var(--text-dim);margin-top:6px;"></div>
+    </div>
+    <div class="timing-settings-section">
+      <h4>タイミング設定</h4>
+      <div class="timing-slider-row">
+        <label for="line-gap">会話間のギャップ</label>
+        <input type="range" id="line-gap" min="0" max="30" step="1" value="0" oninput="updateTimingDisplay()">
+        <span class="timing-value" id="line-gap-value">0フレーム (0.0秒)</span>
+      </div>
+      <div class="timing-slider-row">
+        <label for="scene-buffer">シーン間バッファ</label>
+        <input type="range" id="scene-buffer" min="0" max="60" step="1" value="15" oninput="updateTimingDisplay()">
+        <span class="timing-value" id="scene-buffer-value">15フレーム (0.5秒)</span>
+      </div>
+      <div class="form-group" style="margin-top:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveTimingConfig()">タイミング保存</button>
+        <span id="timing-status" style="font-size:12px;color:var(--text-dim);margin-left:8px;"></span>
+      </div>
+    </div>
+    <div class="avatar-settings-section">
+      <h4>アバター設定</h4>
+      <div class="avatar-settings-grid">
+        <div class="form-group">
+          <label for="avatar-left">左側（話者A）</label>
+          <select id="avatar-left" onchange="updateAvatarPreview('left')"><option value="">読み込み中...</option></select>
+          <div class="avatar-preview" id="avatar-left-preview"><img src="" alt=""></div>
+        </div>
+        <div class="form-group">
+          <label for="avatar-right">右側（話者B）</label>
+          <select id="avatar-right" onchange="updateAvatarPreview('right')"><option value="">読み込み中...</option></select>
+          <div class="avatar-preview" id="avatar-right-preview"><img src="" alt=""></div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-primary btn-sm" onclick="saveAvatarConfig()">アバター保存</button>
+          <span id="avatar-status" style="font-size:12px;color:var(--text-dim);margin-left:8px;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="convert" onclick="switchTab('convert')">&#x5909;&#x63DB;</button>
+    <button class="tab-btn" data-tab="edit" onclick="switchTab('edit')">&#x7DE8;&#x96C6;</button>
+    <button class="tab-btn" data-tab="pipeline" onclick="switchTab('pipeline')">&#x30D1;&#x30A4;&#x30D7;&#x30E9;&#x30A4;&#x30F3;</button>
+  </nav>
+
+  <!-- ====== Convert Tab ====== -->
+  <div id="tab-convert" class="tab-content active">
+    <div class="form-group md-input-wrapper">
+      <label for="md-input">&#x5165;&#x529B;&#x30C6;&#x30AD;&#x30B9;&#x30C8;</label>
+      <textarea id="md-input" placeholder="&#x30DE;&#x30FC;&#x30AF;&#x30C0;&#x30A6;&#x30F3;&#x307E;&#x305F;&#x306F;&#x30C6;&#x30AD;&#x30B9;&#x30C8;&#x3092;&#x3053;&#x3053;&#x306B;&#x8CBC;&#x308A;&#x4ED8;&#x3051;..."></textarea>
+      <div class="drag-overlay">&#x30D5;&#x30A1;&#x30A4;&#x30EB;&#x3092;&#x30C9;&#x30ED;&#x30C3;&#x30D7;&#x3057;&#x3066;&#x304F;&#x3060;&#x3055;&#x3044;</div>
+    </div>
+
+    <div class="file-upload-row">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('file-upload').click()">&#x30D5;&#x30A1;&#x30A4;&#x30EB;&#x3092;&#x9078;&#x629E;</button>
+      <input type="file" id="file-upload" accept=".md,.txt,.markdown">
+      <span id="file-name" style="font-size:12px;color:var(--text-dim);"></span>
+    </div>
+
+    <div class="form-group" style="margin-top:16px;">
+      <label for="title-input">&#x30BF;&#x30A4;&#x30C8;&#x30EB;&#xFF08;&#x30AA;&#x30D7;&#x30B7;&#x30E7;&#x30F3;&#xFF09;</label>
+      <input type="text" id="title-input" placeholder="&#x5165;&#x529B;&#x3057;&#x306A;&#x3044;&#x5834;&#x5408;&#x306F;&#x81EA;&#x52D5;&#x751F;&#x6210;&#x3055;&#x308C;&#x307E;&#x3059;">
+    </div>
+
+    <div class="convert-actions">
+      <button id="convert-btn" class="btn btn-primary" onclick="startConversion()">&#x5909;&#x63DB;&#x958B;&#x59CB;</button>
+    </div>
+
+    <div id="progress-section" class="progress-section">
+      <div class="progress-bar">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+      <div id="progress-status" class="progress-status">&#x6E96;&#x5099;&#x4E2D;...</div>
+      <div id="progress-step" class="progress-step"></div>
+    </div>
+  </div>
+
+  <!-- ====== Edit Tab ====== -->
+  <div id="tab-edit" class="tab-content">
+    <div class="edit-header">
+      <h2 id="script-title">スクリプト編集</h2>
+      <div class="edit-actions">
+        <button class="btn btn-secondary btn-sm" onclick="importJsonFile()">JSONファイル読み込み</button>
+        <button class="btn btn-secondary btn-sm" onclick="saveScript()">保存</button>
+        <button class="btn btn-secondary btn-sm" onclick="downloadScript()">ダウンロード</button>
+      </div>
+    </div>
+    <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="handleJsonFileSelect(event)">
+    <div id="scenes-container">
+      <div class="empty-state">
+        <p>スクリプトが読み込まれていません</p>
+        <button class="btn btn-secondary" onclick="loadScript()">サーバーから読み込み</button>
+        <button class="btn btn-secondary" onclick="importJsonFile()">JSONファイルから読み込み</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Pipeline Tab ====== -->
+  <div id="tab-pipeline" class="tab-content">
+    <div id="pipeline-info" class="pipeline-info">&#x30B9;&#x30AF;&#x30EA;&#x30D7;&#x30C8;&#x60C5;&#x5831;&#x3092;&#x8AAD;&#x307F;&#x8FBC;&#x307F;&#x4E2D;...</div>
+
+    <div class="pipeline-steps">
+      <div class="pipeline-step-card" id="pstep-1">
+        <div class="step-icon waiting" id="pstep-icon-1">1</div>
+        <div class="step-info">
+          <div class="step-name">&#x30B9;&#x30E9;&#x30A4;&#x30C9;&#x62BD;&#x51FA;</div>
+          <div class="step-status-text" id="pstep-status-1">&#x5F85;&#x6A5F;&#x4E2D;</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="runPipelineStep(1)">&#x5B9F;&#x884C;</button>
+      </div>
+      <div class="pipeline-step-card" id="pstep-2">
+        <div class="step-icon waiting" id="pstep-icon-2">2</div>
+        <div class="step-info">
+          <div class="step-name">&#x753B;&#x50CF;&#x751F;&#x6210;</div>
+          <div class="step-status-text" id="pstep-status-2">&#x5F85;&#x6A5F;&#x4E2D;</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="runPipelineStep(2)">&#x5B9F;&#x884C;</button>
+      </div>
+      <div class="pipeline-step-card" id="pstep-3">
+        <div class="step-icon waiting" id="pstep-icon-3">3</div>
+        <div class="step-info">
+          <div class="step-name">&#x97F3;&#x58F0;&#x751F;&#x6210;</div>
+          <div class="step-status-text" id="pstep-status-3">&#x5F85;&#x6A5F;&#x4E2D;</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="runPipelineStep(3)">&#x5B9F;&#x884C;</button>
+      </div>
+      <div class="pipeline-step-card" id="pstep-4">
+        <div class="step-icon waiting" id="pstep-icon-4">4</div>
+        <div class="step-info">
+          <div class="step-name">&#x52D5;&#x753B;&#x30EC;&#x30F3;&#x30C0;&#x30EA;&#x30F3;&#x30B0;</div>
+          <div class="step-status-text" id="pstep-status-4">&#x5F85;&#x6A5F;&#x4E2D;</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="runPipelineStep(4)">&#x5B9F;&#x884C;</button>
+      </div>
+    </div>
+
+    <div class="pipeline-run-all">
+      <button id="run-all-btn" class="btn btn-primary" onclick="runAllSteps()">&#x5168;&#x30B9;&#x30C6;&#x30C3;&#x30D7;&#x5B9F;&#x884C;</button>
+    </div>
+
+    <label>&#x30ED;&#x30B0;</label>
+    <div id="log-panel" class="log-panel">&#x30D1;&#x30A4;&#x30D7;&#x30E9;&#x30A4;&#x30F3;&#x306E;&#x30ED;&#x30B0;&#x304C;&#x3053;&#x3053;&#x306B;&#x8868;&#x793A;&#x3055;&#x308C;&#x307E;&#x3059;...
+</div>
+  </div>
+
+  <!-- ====== Notification ====== -->
+  <div id="notification" class="notification"></div>
+
+  <script>
+    /* ==========================================================================
+       STATE
+       ========================================================================== */
+    let currentScript = null;
+
+    const SLIDE_TYPES = [
+      'title','list','steps','image-text','table','summary','ending','bridge',
+      'quote','definition','highlight','tips','warning','comparison','stat',
+      'checklist','before-after','code','qa','two-column','agenda','gallery',
+      'process','profile','metrics','icon-list'
+    ];
+
+    const DIAGRAM_TYPES = [
+      'timeline','cycle','pie','matrix','venn','funnel','pyramid',
+      'bar','line','flow','tree','radar','gantt','area','network'
+    ];
+
+    /* ==========================================================================
+       LLM SETTINGS
+       ========================================================================== */
+    function toggleSettings() {
+      document.getElementById('settings-panel').classList.toggle('open');
+    }
+
+    function onProviderChange() {
+      var provider = document.getElementById('llm-provider').value;
+      document.getElementById('ollama-url-group').style.display =
+        provider === 'ollama' ? '' : 'none';
+    }
+
+    function updateProviderBadge(provider) {
+      var badge = document.getElementById('provider-badge');
+      badge.className = 'provider-badge ' + provider;
+      badge.textContent = provider === 'ollama' ? 'Ollama' : 'Gemini';
+    }
+
+    async function loadLLMConfig() {
+      try {
+        var response = await fetch('/api/llm-config');
+        if (!response.ok) return;
+        var config = await response.json();
+        document.getElementById('llm-provider').value = config.provider || 'gemini';
+        document.getElementById('llm-model').value = config.model || '';
+        document.getElementById('ollama-url').value = config.ollamaBaseUrl || '';
+        onProviderChange();
+        updateProviderBadge(config.provider || 'gemini');
+      } catch (err) {
+        console.warn('Failed to load LLM config:', err);
+      }
+    }
+
+    async function saveLLMConfig() {
+      var config = {
+        provider: document.getElementById('llm-provider').value,
+        model: document.getElementById('llm-model').value || undefined,
+        ollamaBaseUrl: document.getElementById('ollama-url').value || undefined
+      };
+
+      try {
+        var response = await fetch('/api/llm-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        updateProviderBadge(config.provider);
+        notify('LLM\u8A2D\u5B9A\u3092\u4FDD\u5B58\u3057\u307E\u3057\u305F', 'success');
+      } catch (err) {
+        notify('LLM\u8A2D\u5B9A\u306E\u4FDD\u5B58\u306B\u5931\u6557: ' + err.message, 'error');
+      }
+    }
+
+    // Load LLM config on page load
+    loadLLMConfig();
+
+    /* ==========================================================================
+       VOICE / SPEAKER SETTINGS
+       ========================================================================== */
+    async function loadSpeakers() {
+      var statusEl = document.getElementById('speaker-status');
+      try {
+        var response = await fetch('/api/speakers');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        var data = await response.json();
+
+        var leftSelect = document.getElementById('speaker-left');
+        var rightSelect = document.getElementById('speaker-right');
+
+        if (data.speakers && data.speakers.length > 0) {
+          var optionsHTML = '';
+          for (var i = 0; i < data.speakers.length; i++) {
+            var speaker = data.speakers[i];
+            var styles = speaker.styles || [];
+            for (var j = 0; j < styles.length; j++) {
+              var style = styles[j];
+              var label = speaker.name + ' (' + style.name + ')';
+              optionsHTML += '<option value="' + style.id + '">' + label + '</option>';
+            }
+          }
+          leftSelect.innerHTML = optionsHTML;
+          rightSelect.innerHTML = optionsHTML;
+
+          // Set current config values
+          if (data.config) {
+            leftSelect.value = String(data.config.left);
+            rightSelect.value = String(data.config.right);
+          }
+          statusEl.textContent = 'VOICEVOX\u63A5\u7D9A\u6E08\u307F \u2014 ' + data.speakers.length + '\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC';
+          statusEl.style.color = 'var(--success)';
+        } else {
+          statusEl.textContent = data.error || 'VOICEVOX\u672A\u63A5\u7D9A\uFF08\u30C7\u30D5\u30A9\u30EB\u30C8\u5024\u3092\u4F7F\u7528\uFF09';
+          statusEl.style.color = 'var(--warning)';
+        }
+      } catch (err) {
+        statusEl.textContent = 'VOICEVOX\u63A5\u7D9A\u30A8\u30E9\u30FC: ' + err.message;
+        statusEl.style.color = 'var(--accent)';
+      }
+    }
+
+    async function saveSpeakerConfig() {
+      var config = {
+        left: parseInt(document.getElementById('speaker-left').value),
+        right: parseInt(document.getElementById('speaker-right').value)
+      };
+      try {
+        var response = await fetch('/api/speakers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        notify('\u97F3\u58F0\u8A2D\u5B9A\u3092\u4FDD\u5B58\u3057\u307E\u3057\u305F', 'success');
+      } catch (err) {
+        notify('\u97F3\u58F0\u8A2D\u5B9A\u306E\u4FDD\u5B58\u306B\u5931\u6557: ' + err.message, 'error');
+      }
+    }
+
+    // Load speakers on page load
+    loadSpeakers();
+
+    /* ==========================================================================
+       TIMING SETTINGS
+       ========================================================================== */
+    function updateTimingDisplay() {
+      var lineGap = parseInt(document.getElementById('line-gap').value);
+      var sceneBuffer = parseInt(document.getElementById('scene-buffer').value);
+      document.getElementById('line-gap-value').textContent =
+        lineGap + '\u30D5\u30EC\u30FC\u30E0 (' + (lineGap / 30).toFixed(1) + '\u79D2)';
+      document.getElementById('scene-buffer-value').textContent =
+        sceneBuffer + '\u30D5\u30EC\u30FC\u30E0 (' + (sceneBuffer / 30).toFixed(1) + '\u79D2)';
+    }
+
+    async function saveTimingConfig() {
+      var config = {
+        lineGapFrames: parseInt(document.getElementById('line-gap').value),
+        sceneBufferFrames: parseInt(document.getElementById('scene-buffer').value)
+      };
+      try {
+        var response = await fetch('/api/timing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        document.getElementById('timing-status').textContent = '\u4FDD\u5B58\u3057\u307E\u3057\u305F';
+        notify('\u30BF\u30A4\u30DF\u30F3\u30B0\u8A2D\u5B9A\u3092\u4FDD\u5B58\u3057\u307E\u3057\u305F', 'success');
+        setTimeout(function() { document.getElementById('timing-status').textContent = ''; }, 3000);
+      } catch (err) {
+        notify('\u30BF\u30A4\u30DF\u30F3\u30B0\u4FDD\u5B58\u306B\u5931\u6557: ' + err.message, 'error');
+      }
+    }
+
+    async function loadTimingConfig() {
+      try {
+        var response = await fetch('/api/timing');
+        if (response.ok) {
+          var config = await response.json();
+          if (config.lineGapFrames != null) {
+            document.getElementById('line-gap').value = config.lineGapFrames;
+          }
+          if (config.sceneBufferFrames != null) {
+            document.getElementById('scene-buffer').value = config.sceneBufferFrames;
+          }
+          updateTimingDisplay();
+        }
+      } catch (err) {
+        // ignore - use defaults
+      }
+    }
+
+    loadTimingConfig();
+
+    /* ==========================================================================
+       AVATAR SETTINGS
+       ========================================================================== */
+    async function loadAvatars() {
+      try {
+        var response = await fetch('/api/avatars');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        var data = await response.json();
+
+        var leftSelect = document.getElementById('avatar-left');
+        var rightSelect = document.getElementById('avatar-right');
+
+        leftSelect.innerHTML = '';
+        rightSelect.innerHTML = '';
+
+        data.avatars.forEach(function(av) {
+          var optL = document.createElement('option');
+          optL.value = av.id;
+          optL.textContent = av.name;
+          leftSelect.appendChild(optL);
+
+          var optR = document.createElement('option');
+          optR.value = av.id;
+          optR.textContent = av.name;
+          rightSelect.appendChild(optR);
+        });
+
+        if (data.config.left) leftSelect.value = data.config.left;
+        if (data.config.right) rightSelect.value = data.config.right;
+
+        updateAvatarPreview('left');
+        updateAvatarPreview('right');
+      } catch (err) {
+        console.warn('Failed to load avatars:', err);
+      }
+    }
+
+    function updateAvatarPreview(side) {
+      var select = document.getElementById('avatar-' + side);
+      var preview = document.getElementById('avatar-' + side + '-preview');
+      var avatarId = select.value;
+      if (avatarId) {
+        preview.querySelector('img').src = '/avatars/' + avatarId + '/eo-mc.png';
+      } else {
+        preview.querySelector('img').src = '';
+      }
+    }
+
+    async function saveAvatarConfig() {
+      var config = {
+        left: document.getElementById('avatar-left').value,
+        right: document.getElementById('avatar-right').value
+      };
+      try {
+        var response = await fetch('/api/avatars', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        document.getElementById('avatar-status').textContent = '保存しました';
+        notify('アバター設定を保存しました', 'success');
+        setTimeout(function() { document.getElementById('avatar-status').textContent = ''; }, 3000);
+      } catch (err) {
+        notify('アバター保存に失敗: ' + err.message, 'error');
+      }
+    }
+
+    loadAvatars();
+
+    /* ==========================================================================
+       JSON FILE IMPORT (Edit Tab)
+       ========================================================================== */
+    function importJsonFile() {
+      document.getElementById('json-file-input').click();
+    }
+
+    function handleJsonFileSelect(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var script = JSON.parse(e.target.result);
+          if (!script.scenes || !Array.isArray(script.scenes)) {
+            notify('無効なスクリプトJSON: scenes配列がありません', 'error');
+            return;
+          }
+          currentScript = script;
+          document.getElementById('script-title').textContent = script.title || 'スクリプト編集';
+          renderScenes(script);
+          notify(file.name + ' を読み込みました（' + script.scenes.length + 'シーン）', 'success');
+          // Switch to edit tab
+          switchTab('edit');
+        } catch (err) {
+          notify('JSONの解析に失敗: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    /* ==========================================================================
+       TAB SWITCHING
+       ========================================================================== */
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
+      document.getElementById('tab-' + tabName).classList.add('active');
+      document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+
+      if (tabName === 'edit') loadScript();
+      if (tabName === 'pipeline') loadPipelineStatus();
+    }
+
+    /* ==========================================================================
+       NOTIFICATIONS
+       ========================================================================== */
+    function notify(message, type) {
+      type = type || 'info';
+      var el = document.getElementById('notification');
+      el.textContent = message;
+      el.className = 'notification ' + type + ' show';
+      setTimeout(function() { el.classList.remove('show'); }, 3000);
+    }
+
+    /* ==========================================================================
+       CONVERT TAB
+       ========================================================================== */
+    // File upload
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('file-name').textContent = file.name;
+      var reader = new FileReader();
+      reader.onload = function() { document.getElementById('md-input').value = reader.result; };
+      reader.readAsText(file);
+    });
+
+    // Drag & drop
+    (function() {
+      var dropZone = document.getElementById('md-input');
+      dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+      dropZone.addEventListener('dragleave', function() {
+        dropZone.classList.remove('dragover');
+      });
+      dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        var file = e.dataTransfer.files[0];
+        if (file) {
+          document.getElementById('file-name').textContent = file.name;
+          var reader = new FileReader();
+          reader.onload = function() { dropZone.value = reader.result; };
+          reader.readAsText(file);
+        }
+      });
+    })();
+
+    function showProgress() {
+      var section = document.getElementById('progress-section');
+      section.classList.add('visible');
+      document.getElementById('progress-fill').style.width = '0%';
+      document.getElementById('progress-status').textContent = '\u6E96\u5099\u4E2D...';
+      document.getElementById('progress-step').textContent = '';
+    }
+
+    function hideProgress() {
+      document.getElementById('progress-section').classList.remove('visible');
+    }
+
+    function handleConvertEvent(data) {
+      var s = data.step;
+      if (s === 'parsing' || s === 'planning' || s === 'converting') {
+        var pct = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('progress-status').textContent = data.message || '\u51E6\u7406\u4E2D...';
+        if (data.current && data.total) {
+          document.getElementById('progress-step').textContent = data.current + ' / ' + data.total;
+        } else {
+          document.getElementById('progress-step').textContent = s;
+        }
+      } else if (s === 'complete') {
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('progress-status').textContent = '\u5909\u63DB\u5B8C\u4E86\uFF01';
+        document.getElementById('progress-step').textContent = '';
+        document.getElementById('convert-btn').disabled = false;
+        notify('\u5909\u63DB\u304C\u5B8C\u4E86\u3057\u307E\u3057\u305F', 'success');
+        setTimeout(function() { switchTab('edit'); }, 800);
+      } else if (s === 'error') {
+        document.getElementById('progress-status').textContent = '\u30A8\u30E9\u30FC: ' + (data.message || '\u4E0D\u660E\u306A\u30A8\u30E9\u30FC');
+        document.getElementById('progress-fill').style.width = '0%';
+        document.getElementById('convert-btn').disabled = false;
+        notify('\u5909\u63DB\u30A8\u30E9\u30FC: ' + (data.message || ''), 'error');
+      }
+    }
+
+    async function startConversion() {
+      var content = document.getElementById('md-input').value;
+      if (!content.trim()) {
+        notify('\u30C6\u30AD\u30B9\u30C8\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044', 'error');
+        return;
+      }
+
+      var titleOverride = document.getElementById('title-input').value;
+      document.getElementById('convert-btn').disabled = true;
+      showProgress();
+
+      try {
+        var response = await fetch('/api/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: content, title: titleOverride || undefined })
+        });
+
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        }
+
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+
+        while (true) {
+          var result = await reader.read();
+          if (result.done) break;
+          buffer += decoder.decode(result.value, { stream: true });
+
+          var events = buffer.split('\n\n');
+          buffer = events.pop() || '';
+
+          for (var i = 0; i < events.length; i++) {
+            var lines = events[i].split('\n');
+            var dataLine = null;
+            for (var j = 0; j < lines.length; j++) {
+              if (lines[j].indexOf('data: ') === 0) {
+                dataLine = lines[j];
+                break;
+              }
+            }
+            if (!dataLine) continue;
+            try {
+              var data = JSON.parse(dataLine.slice(6));
+              handleConvertEvent(data);
+            } catch (parseErr) {
+              console.warn('Failed to parse SSE data:', parseErr);
+            }
+          }
+        }
+
+        // If no complete event was sent, still re-enable button
+        document.getElementById('convert-btn').disabled = false;
+      } catch (err) {
+        document.getElementById('convert-btn').disabled = false;
+        document.getElementById('progress-status').textContent = '\u30A8\u30E9\u30FC: ' + err.message;
+        notify('\u63A5\u7D9A\u30A8\u30E9\u30FC: ' + err.message, 'error');
+      }
+    }
+
+    /* ==========================================================================
+       EDIT TAB
+       ========================================================================== */
+    function getSlideDataFields(type) {
+      var fields = {
+        'title':        [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'subtitle', label:'\u30B5\u30D6\u30BF\u30A4\u30C8\u30EB' }],
+        'bridge':       [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'subtitle', label:'\u30B5\u30D6\u30BF\u30A4\u30C8\u30EB' }],
+        'highlight':    [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'subtitle', label:'\u30B5\u30D6\u30BF\u30A4\u30C8\u30EB' }],
+        'ending':       [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'subtitle', label:'\u30B5\u30D6\u30BF\u30A4\u30C8\u30EB' }, { key:'ctaText', label:'CTA\u30C6\u30AD\u30B9\u30C8' }],
+        'list':         [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'steps':        [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u30B9\u30C6\u30C3\u30D7\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'checklist':    [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'tips':         [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u30D2\u30F3\u30C8\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'warning':      [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u8B66\u544A\u9805\u76EE\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'agenda':       [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u30A2\u30B8\u30A7\u30F3\u30C0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'summary':      [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u307E\u3068\u3081\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'process':      [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'items', label:'\u30D7\u30ED\u30BB\u30B9\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'table':        [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'tableHeaders', label:'\u30D8\u30C3\u30C0\u30FC\uFF08\u30AB\u30F3\u30DE\u533A\u5207\u308A\uFF09' }, { key:'tableRows', label:'\u884C\u30C7\u30FC\u30BF\uFF081\u884C1\u30EC\u30B3\u30FC\u30C9\u3001\u30BB\u30EB\u306F | \u533A\u5207\u308A\uFF09', type:'textarea' }],
+        'code':         [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'code', label:'\u30B3\u30FC\u30C9', type:'textarea' }, { key:'language', label:'\u8A00\u8A9E' }],
+        'quote':        [{ key:'quote', label:'\u5F15\u7528\u6587', type:'textarea' }, { key:'attribution', label:'\u51FA\u5178' }],
+        'definition':   [{ key:'title', label:'\u7528\u8A9E' }, { key:'definition', label:'\u5B9A\u7FA9', type:'textarea' }],
+        'stat':         [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'statValue', label:'\u6570\u5024' }, { key:'statLabel', label:'\u30E9\u30D9\u30EB' }],
+        'qa':           [{ key:'question', label:'\u8CEA\u554F' }, { key:'answer', label:'\u56DE\u7B54', type:'textarea' }],
+        'comparison':   [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'leftColumn.title', label:'\u5DE6\u30BF\u30A4\u30C8\u30EB' }, { key:'leftColumn.items', label:'\u5DE6\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }, { key:'rightColumn.title', label:'\u53F3\u30BF\u30A4\u30C8\u30EB' }, { key:'rightColumn.items', label:'\u53F3\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'two-column':   [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'leftColumn.title', label:'\u5DE6\u30BF\u30A4\u30C8\u30EB' }, { key:'leftColumn.items', label:'\u5DE6\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }, { key:'rightColumn.title', label:'\u53F3\u30BF\u30A4\u30C8\u30EB' }, { key:'rightColumn.items', label:'\u53F3\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'before-after': [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'leftColumn.title', label:'Before\u30BF\u30A4\u30C8\u30EB' }, { key:'leftColumn.items', label:'Before\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }, { key:'rightColumn.title', label:'After\u30BF\u30A4\u30C8\u30EB' }, { key:'rightColumn.items', label:'After\u30A2\u30A4\u30C6\u30E0\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'profile':      [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'profileName', label:'\u540D\u524D' }, { key:'profileRole', label:'\u5F79\u5272' }, { key:'items', label:'\u9805\u76EE\uFF081\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'metrics':      [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'metrics', label:'\u30E1\u30C8\u30EA\u30AF\u30B9\uFF08\u5F62\u5F0F: label,value / 1\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'icon-list':    [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }, { key:'iconItems', label:'\u30A2\u30A4\u30B3\u30F3\u30EA\u30B9\u30C8\uFF08\u5F62\u5F0F: icon,text / 1\u884C1\u4EF6\uFF09', type:'textarea' }],
+        'image-text':   [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }],
+        'gallery':      [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }]
+      };
+      return fields[type] || [{ key:'title', label:'\u30BF\u30A4\u30C8\u30EB' }];
+    }
+
+    function getNestedValue(obj, path) {
+      var parts = path.split('.');
+      var current = obj;
+      for (var i = 0; i < parts.length; i++) {
+        if (current == null) return '';
+        current = current[parts[i]];
+      }
+      if (Array.isArray(current)) return current.join('\n');
+      return current || '';
+    }
+
+    function setNestedValue(obj, path, value) {
+      var parts = path.split('.');
+      var current = obj;
+      for (var i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+      current[parts[parts.length - 1]] = value;
+    }
+
+    function buildSlideDataFieldsHTML(sceneIndex, type, slideData) {
+      slideData = slideData || {};
+      var fields = getSlideDataFields(type);
+      var html = '<div class="slide-data-fields" id="slide-data-' + sceneIndex + '">';
+      for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        var val = getNestedValue(slideData, f.key);
+        var escaped = String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        html += '<div class="form-group">';
+        html += '<label>' + f.label + '</label>';
+        if (f.type === 'textarea') {
+          html += '<textarea data-scene="' + sceneIndex + '" data-field="' + f.key + '">' + String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>';
+        } else {
+          html += '<input type="text" data-scene="' + sceneIndex + '" data-field="' + f.key + '" value="' + escaped + '">';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    // Diagram data field definitions per diagram type
+    function getDiagramDataFields(diagType) {
+      var defs = {
+        'timeline': [{ key: 'events', label: '\u30A4\u30D9\u30F3\u30C8 (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u8AAC\u660E)', type: 'textarea' }],
+        'cycle': [{ key: 'steps', label: '\u30B9\u30C6\u30C3\u30D7 (1\u884C1\u4EF6)', type: 'textarea' }],
+        'pie': [{ key: 'slices', label: '\u30B9\u30E9\u30A4\u30B9 (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u5024)', type: 'textarea' }],
+        'matrix': [
+          { key: 'axisX', label: 'X\u8EF8', type: 'text' },
+          { key: 'axisY', label: 'Y\u8EF8', type: 'text' },
+          { key: 'quadrants', label: '\u8C61\u9650 (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u9805\u76EE1,\u9805\u76EE2)', type: 'textarea' }
+        ],
+        'venn': [
+          { key: 'sets', label: '\u30BB\u30C3\u30C8 (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u9805\u76EE1,\u9805\u76EE2)', type: 'textarea' },
+          { key: 'intersection', label: '\u4EA4\u5DEE', type: 'text' }
+        ],
+        'funnel': [{ key: 'stages', label: '\u30B9\u30C6\u30FC\u30B8 (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u5024)', type: 'textarea' }],
+        'pyramid': [{ key: 'levels', label: '\u30EC\u30D9\u30EB (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u8AAC\u660E)', type: 'textarea' }],
+        'bar': [{ key: 'bars', label: '\u30D0\u30FC (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u5024)', type: 'textarea' }],
+        'line': [
+          { key: 'series', label: '\u30B7\u30EA\u30FC\u30BA (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u50241,\u50242,...)', type: 'textarea' },
+          { key: 'xLabels', label: 'X\u30E9\u30D9\u30EB (\u30AB\u30F3\u30DE\u533A\u5207\u308A)', type: 'text' }
+        ],
+        'flow': [
+          { key: 'nodes', label: '\u30CE\u30FC\u30C9 (1\u884C1\u4EF6: id,\u30E9\u30D9\u30EB,shape)', type: 'textarea' },
+          { key: 'edges', label: '\u30A8\u30C3\u30B8 (1\u884C1\u4EF6: from,to,\u30E9\u30D9\u30EB)', type: 'textarea' }
+        ],
+        'tree': [
+          { key: 'root', label: '\u30EB\u30FC\u30C8', type: 'text' },
+          { key: 'children', label: '\u5B50\u30CE\u30FC\u30C9 (1\u884C1\u4EF6: \u89AA,\u5B501,\u5B502)', type: 'textarea' }
+        ],
+        'radar': [{ key: 'axes', label: '\u8EF8 (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u5024)', type: 'textarea' }],
+        'gantt': [{ key: 'tasks', label: '\u30BF\u30B9\u30AF (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u958B\u59CB,\u7D42\u4E86)', type: 'textarea' }],
+        'area': [
+          { key: 'series', label: '\u30B7\u30EA\u30FC\u30BA (1\u884C1\u4EF6: \u30E9\u30D9\u30EB,\u50241,\u50242,...)', type: 'textarea' },
+          { key: 'xLabels', label: 'X\u30E9\u30D9\u30EB (\u30AB\u30F3\u30DE\u533A\u5207\u308A)', type: 'text' }
+        ],
+        'network': [
+          { key: 'nodes', label: '\u30CE\u30FC\u30C9 (1\u884C1\u4EF6: id,\u30E9\u30D9\u30EB)', type: 'textarea' },
+          { key: 'links', label: '\u30EA\u30F3\u30AF (1\u884C1\u4EF6: source,target,\u30E9\u30D9\u30EB)', type: 'textarea' }
+        ]
+      };
+      return defs[diagType] || [];
+    }
+
+    function diagramToText(diagType, data) {
+      if (!data) return '';
+      switch (diagType) {
+        case 'timeline': return (data.events || []).map(function(e) { return e.label + ',' + (e.description || ''); }).join('\n');
+        case 'cycle': return (data.steps || []).join('\n');
+        case 'pie': return (data.slices || []).map(function(s) { return s.label + ',' + s.value; }).join('\n');
+        case 'matrix': return (data.quadrants || []).map(function(q) { return q.label + ',' + (q.items || []).join(','); }).join('\n');
+        case 'venn': return (data.sets || []).map(function(s) { return s.label + ',' + (s.items || []).join(','); }).join('\n');
+        case 'funnel': return (data.stages || []).map(function(s) { return s.label + (s.value != null ? ',' + s.value : ''); }).join('\n');
+        case 'pyramid': return (data.levels || []).map(function(l) { return l.label + ',' + (l.description || ''); }).join('\n');
+        case 'bar': return (data.bars || []).map(function(b) { return b.label + ',' + b.value; }).join('\n');
+        case 'line': case 'area':
+          return (data.series || []).map(function(s) { return s.label + ',' + (s.data || []).join(','); }).join('\n');
+        case 'flow': return ''; // handled separately per field
+        case 'tree': return ''; // handled separately per field
+        case 'radar': return (data.axes || []).map(function(a) { return a.label + ',' + a.value; }).join('\n');
+        case 'gantt': return (data.tasks || []).map(function(t) { return t.label + ',' + t.start + ',' + t.end; }).join('\n');
+        case 'network': return ''; // handled separately per field
+        default: return '';
+      }
+    }
+
+    function getDiagramFieldValue(diagType, fieldKey, data) {
+      if (!data) return '';
+      if (fieldKey === 'axisX') return data.axisX || '';
+      if (fieldKey === 'axisY') return data.axisY || '';
+      if (fieldKey === 'intersection') return data.intersection || '';
+      if (fieldKey === 'root') return data.root || '';
+      if (fieldKey === 'xLabels') return (data.xLabels || []).join(',');
+      // textarea fields
+      if (fieldKey === 'nodes') {
+        return (data.nodes || []).map(function(n) { return n.id + ',' + n.label + (n.shape ? ',' + n.shape : ''); }).join('\n');
+      }
+      if (fieldKey === 'edges') {
+        return (data.edges || []).map(function(e) { return e.from + ',' + e.to + (e.label ? ',' + e.label : ''); }).join('\n');
+      }
+      if (fieldKey === 'links') {
+        return (data.links || []).map(function(l) { return l.source + ',' + l.target + (l.label ? ',' + l.label : ''); }).join('\n');
+      }
+      if (fieldKey === 'children') {
+        return (data.children || []).map(function(c) {
+          return c.label + ',' + ((c.children || []).map(function(ch) { return ch.label; }).join(','));
+        }).join('\n');
+      }
+      return diagramToText(diagType, data);
+    }
+
+    function buildDiagramDataHTML(sceneIndex, diag) {
+      var diagType = diag.type;
+      var fields = getDiagramDataFields(diagType);
+      var html = '';
+      for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        var val = getDiagramFieldValue(diagType, f.key, diag);
+        var escaped = String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        html += '<div class="form-group">';
+        html += '<label>' + f.label + '</label>';
+        if (f.type === 'textarea') {
+          html += '<textarea data-scene="' + sceneIndex + '" data-diagram-field="' + f.key + '">' + String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>';
+        } else {
+          html += '<input type="text" data-scene="' + sceneIndex + '" data-diagram-field="' + f.key + '" value="' + escaped + '">';
+        }
+        html += '</div>';
+      }
+      return html;
+    }
+
+    function onDiagramTypeChange(sceneIndex, newType) {
+      var container = document.getElementById('diagram-data-' + sceneIndex);
+      if (!newType) {
+        container.innerHTML = '';
+        return;
+      }
+      var html = buildDiagramDataHTML(sceneIndex, { type: newType });
+      container.innerHTML = html;
+    }
+
+    function collectDiagramData(sceneCard, sceneIndex) {
+      var diagTypeEl = sceneCard.querySelector('select[data-role="diagram-type"]');
+      if (!diagTypeEl || !diagTypeEl.value) return undefined;
+      var diagType = diagTypeEl.value;
+      var result = { type: diagType };
+      var container = document.getElementById('diagram-data-' + sceneIndex);
+      if (!container) return result;
+
+      var inputs = container.querySelectorAll('input[data-diagram-field], textarea[data-diagram-field]');
+      inputs.forEach(function(el) {
+        var key = el.getAttribute('data-diagram-field');
+        var val = el.value;
+        switch (diagType) {
+          case 'timeline':
+            if (key === 'events') result.events = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),description:(p.slice(1).join(',') || '').trim() || undefined};});
+            break;
+          case 'cycle':
+            if (key === 'steps') result.steps = val.split('\n').filter(function(l){return l.trim();}).map(function(l){return l.trim();});
+            break;
+          case 'pie':
+            if (key === 'slices') result.slices = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),value:Number(p[1]) || 0};});
+            break;
+          case 'matrix':
+            if (key === 'axisX') result.axisX = val;
+            if (key === 'axisY') result.axisY = val;
+            if (key === 'quadrants') result.quadrants = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),items:p.slice(1).map(function(i){return i.trim();})};});
+            break;
+          case 'venn':
+            if (key === 'sets') result.sets = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),items:p.slice(1).map(function(i){return i.trim();})};});
+            if (key === 'intersection') result.intersection = val || undefined;
+            break;
+          case 'funnel':
+            if (key === 'stages') result.stages = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),value:p[1] ? Number(p[1]) : undefined};});
+            break;
+          case 'pyramid':
+            if (key === 'levels') result.levels = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),description:(p.slice(1).join(',') || '').trim() || undefined};});
+            break;
+          case 'bar':
+            if (key === 'bars') result.bars = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),value:Number(p[1]) || 0};});
+            break;
+          case 'line': case 'area':
+            if (key === 'series') result.series = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),data:p.slice(1).map(Number)};});
+            if (key === 'xLabels') result.xLabels = val ? val.split(',').map(function(s){return s.trim();}) : undefined;
+            break;
+          case 'flow':
+            if (key === 'nodes') result.nodes = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{id:p[0].trim(),label:p[1] ? p[1].trim() : p[0].trim(),shape:p[2] ? p[2].trim() : undefined};});
+            if (key === 'edges') result.edges = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{from:p[0].trim(),to:p[1] ? p[1].trim() : '',label:p[2] ? p[2].trim() : undefined};});
+            break;
+          case 'tree':
+            if (key === 'root') result.root = val;
+            if (key === 'children') result.children = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),children:p.slice(1).filter(function(c){return c.trim();}).map(function(c){return{label:c.trim()};})};});
+            break;
+          case 'radar':
+            if (key === 'axes') result.axes = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),value:Number(p[1]) || 0};});
+            break;
+          case 'gantt':
+            if (key === 'tasks') result.tasks = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{label:p[0].trim(),start:Number(p[1]) || 0,end:Number(p[2]) || 0};});
+            break;
+          case 'network':
+            if (key === 'nodes') result.nodes = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{id:p[0].trim(),label:p[1] ? p[1].trim() : p[0].trim()};});
+            if (key === 'links') result.links = val.split('\n').filter(function(l){return l.trim();}).map(function(l){var p=l.split(',');return{source:p[0].trim(),target:p[1] ? p[1].trim() : '',label:p[2] ? p[2].trim() : undefined};});
+            break;
+        }
+      });
+      return result;
+    }
+
+    function renderScenes(script) {
+      var container = document.getElementById('scenes-container');
+      if (!script || !script.scenes || script.scenes.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>\u30B7\u30FC\u30F3\u304C\u3042\u308A\u307E\u305B\u3093</p></div>';
+        return;
+      }
+
+      var html = '';
+      for (var si = 0; si < script.scenes.length; si++) {
+        var scene = script.scenes[si];
+        var slide = scene.slide || {};
+        var slideType = slide.type || 'title';
+        // slideDataはslide直下(type除外)
+        var slideData = {};
+        for (var k in slide) { if (k !== 'type') slideData[k] = slide[k]; }
+
+        html += '<div class="scene-card" data-scene-index="' + si + '">';
+        html += '<div class="scene-card-header">';
+        html += '<div class="scene-number">' + (si + 1) + '</div>';
+        html += '<div class="form-group"><input type="text" data-scene="' + si + '" data-role="scene-title" value="' + (scene.title || '').replace(/"/g,'&quot;') + '" placeholder="\u30B7\u30FC\u30F3\u30BF\u30A4\u30C8\u30EB"></div>';
+        html += '</div>';
+
+        // Slide type
+        html += '<div class="scene-fields">';
+        html += '<div class="form-group"><label>\u30B9\u30E9\u30A4\u30C9\u30BF\u30A4\u30D7</label>';
+        html += '<select data-scene="' + si + '" data-role="slide-type" onchange="onSlideTypeChange(' + si + ', this.value)">';
+        for (var ti = 0; ti < SLIDE_TYPES.length; ti++) {
+          var sel = (SLIDE_TYPES[ti] === slideType) ? ' selected' : '';
+          html += '<option value="' + SLIDE_TYPES[ti] + '"' + sel + '>' + SLIDE_TYPES[ti] + '</option>';
+        }
+        html += '</select></div>';
+        html += '</div>';
+
+        // Slide data fields
+        html += buildSlideDataFieldsHTML(si, slideType, slideData);
+
+        // Diagram (optional)
+        var diag = slide.diagram || null;
+        html += '<div class="diagram-section">';
+        html += '<h4>\u30C0\u30A4\u30A2\u30B0\u30E9\u30E0\uFF08\u4EFB\u610F\uFF09</h4>';
+        html += '<div class="form-group"><label>\u30C0\u30A4\u30A2\u30B0\u30E9\u30E0\u30BF\u30A4\u30D7</label>';
+        html += '<select data-scene="' + si + '" data-role="diagram-type" onchange="onDiagramTypeChange(' + si + ', this.value)">';
+        html += '<option value=""' + (!diag ? ' selected' : '') + '>\u306A\u3057</option>';
+        for (var di = 0; di < DIAGRAM_TYPES.length; di++) {
+          var dsel = (diag && diag.type === DIAGRAM_TYPES[di]) ? ' selected' : '';
+          html += '<option value="' + DIAGRAM_TYPES[di] + '"' + dsel + '>' + DIAGRAM_TYPES[di] + '</option>';
+        }
+        html += '</select></div>';
+        html += '<div id="diagram-data-' + si + '">';
+        if (diag) {
+          html += buildDiagramDataHTML(si, diag);
+        }
+        html += '</div>';
+        html += '</div>';
+
+        // Dialogue
+        html += '<div class="dialogue-section">';
+        html += '<h4>\u30C0\u30A4\u30A2\u30ED\u30B0</h4>';
+        html += '<div id="dialogue-lines-' + si + '">';
+        var dialogue = scene.lines || scene.dialogue || [];
+        for (var li = 0; li < dialogue.length; li++) {
+          var line = dialogue[li];
+          var side = line.speaker || line.position || 'left';
+          var dotClass = side === 'right' ? 'right' : 'left';
+          html += '<div class="dialogue-line">';
+          html += '<div class="speaker-dot ' + dotClass + '" data-scene="' + si + '" data-line="' + li + '" onclick="toggleSpeakerSide(' + si + ',' + li + ')" title="\u30AF\u30EA\u30C3\u30AF\u3067\u5207\u308A\u66FF\u3048"></div>';
+          html += '<input type="text" data-scene="' + si + '" data-line="' + li + '" data-role="line-text" value="' + (line.text || '').replace(/"/g,'&quot;') + '" placeholder="\u30C0\u30A4\u30A2\u30ED\u30B0\u30C6\u30AD\u30B9\u30C8">';
+          html += '<button class="btn btn-danger btn-sm" onclick="deleteLine(' + si + ',' + li + ')">\u524A\u9664</button>';
+          html += '</div>';
+        }
+        html += '</div>';
+        html += '<div class="dialogue-actions">';
+        html += '<button class="btn btn-secondary btn-sm" onclick="addLine(' + si + ')">\u884C\u8FFD\u52A0</button>';
+        html += '</div>';
+        html += '</div>';
+
+        // Scene actions: delete + insert after
+        html += '<div class="scene-actions">';
+        html += '<button class="btn btn-secondary btn-sm" onclick="insertSceneAfter(' + si + ')">\u76F4\u5F8C\u306B\u30B7\u30FC\u30F3\u8FFD\u52A0</button>';
+        html += '<button class="btn btn-danger btn-sm" onclick="deleteScene(' + si + ')">\u30B7\u30FC\u30F3\u524A\u9664</button>';
+        html += '</div>';
+        html += '</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function onSlideTypeChange(sceneIndex, newType) {
+      // Collect current slide data first (partial preservation)
+      var oldContainer = document.getElementById('slide-data-' + sceneIndex);
+      var slideData = {};
+      if (oldContainer) {
+        var inputs = oldContainer.querySelectorAll('input[data-field], textarea[data-field]');
+        inputs.forEach(function(el) {
+          var val = el.value;
+          setNestedValue(slideData, el.getAttribute('data-field'), val);
+        });
+      }
+
+      var newHTML = buildSlideDataFieldsHTML(sceneIndex, newType, slideData);
+      if (oldContainer) {
+        oldContainer.outerHTML = newHTML;
+      }
+    }
+
+    function toggleSpeakerSide(sceneIndex, lineIndex) {
+      var dot = document.querySelector('.speaker-dot[data-scene="' + sceneIndex + '"][data-line="' + lineIndex + '"]');
+      if (dot) {
+        if (dot.classList.contains('left')) {
+          dot.classList.remove('left');
+          dot.classList.add('right');
+        } else {
+          dot.classList.remove('right');
+          dot.classList.add('left');
+        }
+      }
+    }
+
+    function addLine(sceneIndex) {
+      var container = document.getElementById('dialogue-lines-' + sceneIndex);
+      var lineIndex = container.querySelectorAll('.dialogue-line').length;
+      var html = '<div class="dialogue-line">';
+      html += '<div class="speaker-dot left" data-scene="' + sceneIndex + '" data-line="' + lineIndex + '" onclick="toggleSpeakerSide(' + sceneIndex + ',' + lineIndex + ')" title="\u30AF\u30EA\u30C3\u30AF\u3067\u5207\u308A\u66FF\u3048"></div>';
+      html += '<input type="text" data-scene="' + sceneIndex + '" data-line="' + lineIndex + '" data-role="line-text" value="" placeholder="\u30C0\u30A4\u30A2\u30ED\u30B0\u30C6\u30AD\u30B9\u30C8">';
+      html += '<button class="btn btn-danger btn-sm" onclick="deleteLine(' + sceneIndex + ',' + lineIndex + ')">\u524A\u9664</button>';
+      html += '</div>';
+      container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function deleteLine(sceneIndex, lineIndex) {
+      var script = collectScript();
+      if (script.scenes[sceneIndex] && script.scenes[sceneIndex].lines) {
+        script.scenes[sceneIndex].lines.splice(lineIndex, 1);
+      }
+      currentScript = script;
+      renderScenes(script);
+    }
+
+    function insertSceneAfter(index) {
+      var script = collectScript();
+      var newScene = {
+        title: '',
+        slide: { type: 'title', title: '', subtitle: '' },
+        lines: []
+      };
+      script.scenes.splice(index + 1, 0, newScene);
+      currentScript = script;
+      renderScenes(script);
+      // Scroll to the new scene
+      var container = document.getElementById('scenes-container');
+      var cards = container.querySelectorAll('.scene-card');
+      if (cards.length > index + 1) {
+        cards[index + 1].scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function deleteScene(index) {
+      if (!confirm('\u30B7\u30FC\u30F3 ' + (index + 1) + ' \u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F')) return;
+      var script = collectScript();
+      script.scenes.splice(index, 1);
+      currentScript = script;
+      renderScenes(script);
+    }
+
+    function collectScript() {
+      var script = {
+        title: currentScript ? currentScript.title : '',
+        description: currentScript ? currentScript.description : '',
+        scenes: []
+      };
+
+      var cards = document.querySelectorAll('.scene-card');
+      cards.forEach(function(card) {
+        var si = parseInt(card.getAttribute('data-scene-index'));
+        var sceneTitle = card.querySelector('input[data-role="scene-title"]').value;
+        var slideType = card.querySelector('select[data-role="slide-type"]').value;
+
+        // Gather slide data
+        var slideDataContainer = document.getElementById('slide-data-' + si);
+        var slideData = {};
+        if (slideDataContainer) {
+          var dataInputs = slideDataContainer.querySelectorAll('input[data-field], textarea[data-field]');
+          dataInputs.forEach(function(el) {
+            var key = el.getAttribute('data-field');
+            var val = el.value;
+
+            // Handle items fields: split by newline into array
+            if (key === 'items' || key.endsWith('.items')) {
+              val = val.split('\n').filter(function(l) { return l.trim() !== ''; });
+            }
+            // Handle tableHeaders: split by comma
+            if (key === 'tableHeaders') {
+              val = val.split(',').map(function(h) { return h.trim(); });
+            }
+            // Handle tableRows: split by newline, then by |
+            if (key === 'tableRows') {
+              val = val.split('\n').filter(function(l) { return l.trim() !== ''; }).map(function(row) {
+                return row.split('|').map(function(c) { return c.trim(); });
+              });
+            }
+            // Handle metrics: label,value per line
+            if (key === 'metrics') {
+              val = val.split('\n').filter(function(l) { return l.trim() !== ''; }).map(function(line) {
+                var parts = line.split(',');
+                return { label: (parts[0] || '').trim(), value: (parts[1] || '').trim() };
+              });
+            }
+            // Handle iconItems: icon,text per line
+            if (key === 'iconItems') {
+              val = val.split('\n').filter(function(l) { return l.trim() !== ''; }).map(function(line) {
+                var parts = line.split(',');
+                return { icon: (parts[0] || '').trim(), text: (parts.slice(1).join(',') || '').trim() };
+              });
+            }
+
+            setNestedValue(slideData, key, val);
+          });
+        }
+
+        // Gather dialogue lines
+        var dialogueContainer = document.getElementById('dialogue-lines-' + si);
+        var dialogue = [];
+        if (dialogueContainer) {
+          var lineEls = dialogueContainer.querySelectorAll('.dialogue-line');
+          lineEls.forEach(function(lineEl) {
+            var dot = lineEl.querySelector('.speaker-dot');
+            var textInput = lineEl.querySelector('input[data-role="line-text"]');
+            dialogue.push({
+              speaker: dot.classList.contains('right') ? 'right' : 'left',
+              text: textInput ? textInput.value : ''
+            });
+          });
+        }
+
+        var slideObj = { type: slideType };
+        for (var dk in slideData) { slideObj[dk] = slideData[dk]; }
+
+        // Collect diagram data
+        var diagramData = collectDiagramData(card, si);
+        if (diagramData) {
+          slideObj.diagram = diagramData;
+        }
+
+        script.scenes.push({
+          title: sceneTitle,
+          slide: slideObj,
+          lines: dialogue
+        });
+      });
+
+      return script;
+    }
+
+    async function loadScript() {
+      try {
+        var response = await fetch('/api/script');
+        if (!response.ok) {
+          if (response.status === 404) {
+            document.getElementById('scenes-container').innerHTML = '<div class="empty-state"><p>\u30B9\u30AF\u30EA\u30D7\u30C8\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u307E\u305A\u5909\u63DB\u30BF\u30D6\u3067\u30C6\u30AD\u30B9\u30C8\u3092\u5909\u63DB\u3057\u3066\u304F\u3060\u3055\u3044\u3002</p></div>';
+            return;
+          }
+          throw new Error('HTTP ' + response.status);
+        }
+        var script = await response.json();
+        currentScript = script;
+        document.getElementById('script-title').textContent = script.title || '\u30B9\u30AF\u30EA\u30D7\u30C8\u7DE8\u96C6';
+        renderScenes(script);
+      } catch (err) {
+        notify('\u30B9\u30AF\u30EA\u30D7\u30C8\u306E\u8AAD\u307F\u8FBC\u307F\u306B\u5931\u6557: ' + err.message, 'error');
+      }
+    }
+
+    async function saveScript() {
+      var script = collectScript();
+      try {
+        var response = await fetch('/api/script', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(script)
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        currentScript = script;
+        notify('\u4FDD\u5B58\u3057\u307E\u3057\u305F', 'success');
+      } catch (err) {
+        notify('\u4FDD\u5B58\u306B\u5931\u6557: ' + err.message, 'error');
+      }
+    }
+
+    function downloadScript() {
+      var script = collectScript();
+      var json = JSON.stringify(script, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = (script.title || 'script') + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      notify('\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9\u3057\u307E\u3057\u305F', 'success');
+    }
+
+    /* ==========================================================================
+       PIPELINE TAB
+       ========================================================================== */
+    var pipelineRunning = false;
+
+    async function loadPipelineStatus() {
+      try {
+        var response = await fetch('/api/script');
+        if (response.ok) {
+          var script = await response.json();
+          var count = script.scenes ? script.scenes.length : 0;
+          document.getElementById('pipeline-info').textContent =
+            '\u5165\u529B: data/input/script.json (' + count + ' \u30B7\u30FC\u30F3)';
+        } else {
+          document.getElementById('pipeline-info').textContent =
+            '\u30B9\u30AF\u30EA\u30D7\u30C8\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\u307E\u305A\u5909\u63DB\u307E\u305F\u306F\u7DE8\u96C6\u3067\u30B9\u30AF\u30EA\u30D7\u30C8\u3092\u4F5C\u6210\u3057\u3066\u304F\u3060\u3055\u3044\u3002';
+        }
+      } catch (err) {
+        document.getElementById('pipeline-info').textContent = '\u30B9\u30AF\u30EA\u30D7\u30C8\u60C5\u5831\u306E\u53D6\u5F97\u306B\u5931\u6557';
+      }
+    }
+
+    function appendLog(message, type) {
+      type = type || 'info';
+      var panel = document.getElementById('log-panel');
+      var span = document.createElement('span');
+      span.className = 'log-' + type;
+      span.textContent = message + '\n';
+      panel.appendChild(span);
+      panel.scrollTop = panel.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('log-panel').innerHTML = '';
+    }
+
+    function updateStepStatus(step, status, text) {
+      var card = document.getElementById('pstep-' + step);
+      var icon = document.getElementById('pstep-icon-' + step);
+      var statusEl = document.getElementById('pstep-status-' + step);
+
+      card.className = 'pipeline-step-card ' + status;
+      icon.className = 'step-icon ' + status;
+
+      var icons = { waiting: step, running: '\u25B6', complete: '\u2713', error: '\u2717' };
+      icon.textContent = icons[status] || step;
+      statusEl.textContent = text || status;
+    }
+
+    function resetAllSteps() {
+      for (var i = 1; i <= 4; i++) {
+        updateStepStatus(i, 'waiting', '\u5F85\u6A5F\u4E2D');
+      }
+    }
+
+    async function runPipelineStep(step) {
+      if (pipelineRunning) {
+        notify('\u30D1\u30A4\u30D7\u30E9\u30A4\u30F3\u304C\u5B9F\u884C\u4E2D\u3067\u3059', 'info');
+        return;
+      }
+      pipelineRunning = true;
+      updateStepStatus(step, 'running', '\u5B9F\u884C\u4E2D...');
+      appendLog('[Step ' + step + '] \u958B\u59CB...', 'info');
+
+      try {
+        var response = await fetch('/api/pipeline/' + step, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ step: step })
+        });
+
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        }
+
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+
+        while (true) {
+          var result = await reader.read();
+          if (result.done) break;
+          buffer += decoder.decode(result.value, { stream: true });
+
+          var events = buffer.split('\n\n');
+          buffer = events.pop() || '';
+
+          for (var i = 0; i < events.length; i++) {
+            var lines = events[i].split('\n');
+            var dataLine = null;
+            for (var j = 0; j < lines.length; j++) {
+              if (lines[j].indexOf('data: ') === 0) {
+                dataLine = lines[j];
+                break;
+              }
+            }
+            if (!dataLine) continue;
+            try {
+              var data = JSON.parse(dataLine.slice(6));
+              handlePipelineEvent(step, data);
+            } catch (parseErr) {
+              console.warn('Failed to parse pipeline SSE:', parseErr);
+            }
+          }
+        }
+
+        // If stream ended without explicit complete/error, mark complete
+        var currentIcon = document.getElementById('pstep-icon-' + step);
+        if (currentIcon.classList.contains('running')) {
+          updateStepStatus(step, 'complete', '\u5B8C\u4E86');
+          appendLog('[Step ' + step + '] \u5B8C\u4E86', 'success');
+        }
+      } catch (err) {
+        updateStepStatus(step, 'error', '\u30A8\u30E9\u30FC');
+        appendLog('[Step ' + step + '] \u30A8\u30E9\u30FC: ' + err.message, 'error');
+        notify('\u30B9\u30C6\u30C3\u30D7 ' + step + ' \u30A8\u30E9\u30FC: ' + err.message, 'error');
+      }
+
+      pipelineRunning = false;
+    }
+
+    function handlePipelineEvent(step, data) {
+      var s = data.step;
+      if (s === 'log') {
+        appendLog(data.message || '', 'info');
+      } else if (s === 'complete') {
+        updateStepStatus(step, 'complete', '\u5B8C\u4E86');
+        appendLog('[Step ' + step + '] \u5B8C\u4E86', 'success');
+      } else if (s === 'error') {
+        updateStepStatus(step, 'error', '\u30A8\u30E9\u30FC');
+        appendLog('[Step ' + step + '] \u30A8\u30E9\u30FC: ' + (data.message || ''), 'error');
+      }
+    }
+
+    async function runAllSteps() {
+      if (pipelineRunning) {
+        notify('\u30D1\u30A4\u30D7\u30E9\u30A4\u30F3\u304C\u5B9F\u884C\u4E2D\u3067\u3059', 'info');
+        return;
+      }
+
+      clearLog();
+      resetAllSteps();
+      document.getElementById('run-all-btn').disabled = true;
+      appendLog('\u5168\u30B9\u30C6\u30C3\u30D7\u5B9F\u884C\u3092\u958B\u59CB\u3057\u307E\u3059...', 'info');
+
+      for (var step = 1; step <= 4; step++) {
+        await runPipelineStep(step);
+        // Check if the step errored
+        var icon = document.getElementById('pstep-icon-' + step);
+        if (icon.classList.contains('error')) {
+          appendLog('\u30B9\u30C6\u30C3\u30D7 ' + step + ' \u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u305F\u305F\u3081\u3001\u30D1\u30A4\u30D7\u30E9\u30A4\u30F3\u3092\u505C\u6B62\u3057\u307E\u3057\u305F', 'error');
+          break;
+        }
+      }
+
+      document.getElementById('run-all-btn').disabled = false;
+      appendLog('\u30D1\u30A4\u30D7\u30E9\u30A4\u30F3\u5B8C\u4E86', 'info');
+      notify('\u30D1\u30A4\u30D7\u30E9\u30A4\u30F3\u5B8C\u4E86', 'success');
+    }
+  </script>
+</body>
+</html>

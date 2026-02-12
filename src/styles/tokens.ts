@@ -1,0 +1,55 @@
+export const tokens = {
+  colors: {
+    primary: "#2563EB",
+    secondary: "#7C3AED",
+    accent: "#F59E0B",
+    background: "#F8FAFC",
+    surface: "#FFFFFF",
+    text: {
+      primary: "#1E293B",
+      secondary: "#64748B",
+      inverse: "#FFFFFF",
+    },
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+    info: "#3B82F6",
+    highlight: "#FDE68A",
+    codeBg: "#1E293B",
+    codeText: "#E2E8F0",
+  },
+  typography: {
+    fontFamily: {
+      sans: '"Noto Sans JP", "Hiragino Sans", sans-serif',
+      mono: '"JetBrains Mono", monospace',
+    },
+    fontSize: {
+      xs: 14,
+      sm: 16,
+      md: 20,
+      lg: 28,
+      xl: 36,
+      "2xl": 48,
+      "3xl": 64,
+      "4xl": 80,
+    },
+  },
+  spacing: {
+    xs: 8,
+    sm: 16,
+    md: 24,
+    lg: 32,
+    xl: 48,
+    "2xl": 64,
+  },
+  animation: {
+    fadeIn: { duration: 15 },
+    slideIn: { duration: 20 },
+    stagger: { delay: 8 },
+  },
+  video: {
+    width: 1920,
+    height: 1080,
+    fps: 30,
+  },
+} as const;
